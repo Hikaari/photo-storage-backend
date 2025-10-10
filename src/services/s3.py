@@ -20,7 +20,7 @@ class S3Service:
         s3_key = f"{uuid.uuid4()}.{file.filename.split('.')[-1]}"
         self.s3.upload_fileobj(file.file, self.bucket_name, s3_key)
         if settings.s3.endpoint_url:
-            public_url = f"{settings.s3.endpoint_url}/{self.bucket_name}/{s3_key}"
+            public_url = f"{settings.s3.public_url}/{s3_key}"
         else:
             public_url = f"https://{self.bucket_name}.s3.amazonaws.com/{s3_key}"
         return public_url, s3_key

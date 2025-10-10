@@ -31,7 +31,7 @@ async def login(request: Request):
 @router.get("/callback")
 async def callback(request: Request, db: Session = Depends(get_db)):
     token = await oauth.oidc.authorize_access_token(request)
-    user_info = await oauth.oidc.parse_id_token(request, token)
+    user_info = await oauth.oidc.userinfo(token=token)
 
     user = users.get_user_by_external_id(db, user_info['sub'])
     if not user:

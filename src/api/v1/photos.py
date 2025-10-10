@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 
 from src.db.session import get_db
@@ -10,9 +10,16 @@ router = APIRouter()
 from src.core.security import get_current_user
 
 @router.post("/")
-def upload_photo(file: UploadFile = File(...), hashtags: str = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def upload_photo(file: UploadFile = File(...), hashtags: str = Form(None), db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     public_url, s3_key = s3.s3_service.upload_file(file)
     
+    db_photo = models.Photo(
+        owner_id=current_user.id,
+        public_url=public_url,
+        s3_key=s3_key
+    )
+    db.add(db_photo)
+
     hashtag_objs = []
     if hashtags:
         hashtag_names = [h.strip() for h in hashtags.split(",")]
@@ -22,14 +29,11 @@ def upload_photo(file: UploadFile = File(...), hashtags: str = None, db: Session
                 hashtag_obj = models.Hashtag(name=name)
                 db.add(hashtag_obj)
             hashtag_objs.append(hashtag_obj)
+    db.flush()
 
-    db_photo = models.Photo(
-        owner_id=current_user.id,
-        public_url=public_url,
-        s3_key=s3_key,
-        hashtags=hashtag_objs
-    )
-    db.add(db_photo)
+    for hashtag_obj in hashtag_objs:
+        db_photo.hashtags.append(hashtag_obj)
+
     db.commit()
     db.refresh(db_photo)
     return db_photo

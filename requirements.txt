@@ -11,3 +11,5 @@ python-multipart
 pyyaml
 psycopg2-binary
 python-jose[cryptography]
+httpx
+itsdangerous

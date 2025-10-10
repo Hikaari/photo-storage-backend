@@ -9,6 +9,7 @@ class S3Settings(BaseSettings):
     aws_secret_access_key: str
     region_name: str
     endpoint_url: Optional[str] = None
+    public_url: str
 
 class OIDCSettings(BaseSettings):
     client_id: str

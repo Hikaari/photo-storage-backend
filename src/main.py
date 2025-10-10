@@ -1,11 +1,14 @@
 
 from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
 from starlette_prometheus import PrometheusMiddleware, metrics
 
 from src.api.v1 import auth, photos, hashtags
+from src.core.config import settings
 
 app = FastAPI()
 
+app.add_middleware(SessionMiddleware, secret_key=settings.jwt.secret_key)
 app.add_middleware(PrometheusMiddleware)
 app.add_route("/metrics", metrics)
 

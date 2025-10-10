@@ -51,6 +51,7 @@ This is a Python-based backend application using the FastAPI framework. The appl
       aws_access_key_id: "YOUR_AWS_ACCESS_KEY_ID"
       aws_secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
       region_name: "us-east-1"
+      public_url: "BUCKET_PUBLIC_URL"
       # endpoint_url: "http://localhost:9000" # Example for MinIO
     oidc:
       client_id: "YOUR_OIDC_CLIENT_ID"
