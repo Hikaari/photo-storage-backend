@@ -1,0 +1,16 @@
+
+database_url: "postgresql://postgres:mysecretpassword@localhost:5432/mydb"
+s3:
+  bucket_name: "photo-storage-bucket"
+  aws_access_key_id: "YOUR_AWS_ACCESS_KEY_ID"
+  aws_secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+  region_name: "us-east-1"
+  # endpoint_url: "http://localhost:9000" # Example for MinIO
+oidc:
+  client_id: "YOUR_OIDC_CLIENT_ID"
+  client_secret: "YOUR_OIDC_CLIENT_SECRET"
+  server_metadata_url: "https://your-oidc-provider.com/.well-known/openid-configuration"
+jwt:
+  secret_key: "a-very-secret-key"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
