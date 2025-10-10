@@ -25,4 +25,7 @@ class S3Service:
             public_url = f"https://{self.bucket_name}.s3.amazonaws.com/{s3_key}"
         return public_url, s3_key
 
+    def delete_file(self, s3_key: str):
+        self.s3.delete_object(Bucket=self.bucket_name, Key=s3_key)
+
 s3_service = S3Service()

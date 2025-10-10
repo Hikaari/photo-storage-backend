@@ -61,7 +61,7 @@ def delete_photo(photo_id: int, db: Session = Depends(get_db), current_user: mod
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    # s3.s3_service.delete_file(photo.s3_key) # You would implement this in the S3 service
+    s3.s3_service.delete_file(photo.s3_key)
 
     db.delete(photo)
     db.commit()
