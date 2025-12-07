@@ -39,7 +39,7 @@ async def callback(request: Request, db: Session = Depends(get_db)):
 
     access_token = create_access_token(data={"sub": user.username})
     return RedirectResponse(
-        url=f"{settings.frontend.url}/login?token={access_token}"
+        url=f"{settings.frontend.url}/?token={access_token}"
     )
 
 
