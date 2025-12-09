@@ -213,3 +213,5 @@ config.yaml
 docker-compose.override.yml
 dockerfile
 entrypoint.sh
+dockerfile
+config.yaml
