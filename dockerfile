@@ -13,6 +13,7 @@ COPY src/ ./src
 # если используешь файл, а не папку config:
 COPY config.yaml ./config.yaml
 
+
 EXPOSE 8000
 # ключевой момент — запуск модулем
 CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
