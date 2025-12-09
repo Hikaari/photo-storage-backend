@@ -211,4 +211,5 @@ __marimo__/
 config.yaml
 .env
 docker-compose.override.yml
-
+dockerfile
+entrypoint.sh
