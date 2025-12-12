@@ -36,9 +36,9 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/photo-backend
           tags: |
-            type=ref,event=branch     # тег вида: feature-ci, dev и т.п.
-            type=sha                  # тег по SHA коммита
-            type=raw,value=latest     # всегда ещё и latest
+            type=ref,event=branch    
+            type=sha                  
+            type=raw,value=latest     
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
