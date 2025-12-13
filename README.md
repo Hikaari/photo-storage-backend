@@ -140,3 +140,4 @@ The application will be available at `http://localhost:8000`.
     *   **Description:** Provides a search endpoint for existing hashtags.
     *   **Authentication:** Not required.
     *   **Query Parameters:** `?q=sun`
+ci check
