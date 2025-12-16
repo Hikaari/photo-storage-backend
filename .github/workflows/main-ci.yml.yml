@@ -1,0 +1,113 @@
+name: Main CI (tag vN + push image)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write   # нужно для создания git-тега через GitHub API
+
+concurrency:
+  group: main-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  version-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Считаем следующий тег vN (v1, v2, v3...) по самым большим существующим тегам
+      - name: Compute next tag (vN)
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python - << 'PY'
+          import os, re, json, urllib.request
+
+          repo = os.environ["REPO"]
+          token = os.environ["GH_TOKEN"]
+
+          def fetch_tags(page: int):
+            url = f"https://api.github.com/repos/{repo}/tags?per_page=100&page={page}"
+            req = urllib.request.Request(url, headers={
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "User-Agent": "actions"
+            })
+            with urllib.request.urlopen(req) as r:
+              return json.loads(r.read().decode("utf-8"))
+
+          pat = re.compile(r"^v(\d+)$")
+          nums = []
+
+          for p in range(1, 6):  # до 500 тегов
+            data = fetch_tags(p)
+            if not data:
+              break
+            for t in data:
+              m = pat.match(t["name"])
+              if m:
+                nums.append(int(m.group(1)))
+
+          next_n = (max(nums) + 1) if nums else 1
+          tag = f"v{next_n}"
+
+          out = os.environ["GITHUB_OUTPUT"]
+          with open(out, "a", encoding="utf-8") as f:
+            f.write(f"tag={tag}\n")
+            f.write(f"n={next_n}\n")
+
+          print("Next tag:", tag)
+          PY
+
+      # Создаём git-тег refs/tags/vN на текущий коммит
+      - name: Create git tag (vN) on this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -e
+
+          # Если тег уже существует — стоп (мы не двигаем теги)
+          if curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/git/ref/tags/$TAG" > /dev/null; then
+            echo "Tag $TAG already exists. Stop."
+            exit 1
+          fi
+
+          # Создаём ref тега на текущий коммит
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/git/refs" \
+            -d "{\"ref\":\"refs/tags/$TAG\",\"sha\":\"$SHA\"}"
+
+          echo "Created tag $TAG -> $SHA"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Пушим ТОЛЬКО один тег — vN. Без latest и без sha.
+      - name: Build & Push (only vN)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/photo-backend:${{ steps.ver.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
