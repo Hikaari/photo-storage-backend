@@ -1,11 +1,11 @@
-name: Main CI (tag vN + push image)
+name: Main CI (tag vN + push image + latest)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
-  contents: write   # нужно для создания git-тега через GitHub API
+  contents: write
 
 concurrency:
   group: main-${{ github.repository }}
@@ -19,7 +19,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Считаем следующий тег vN (v1, v2, v3...) по самым большим существующим тегам
       - name: Compute next tag (vN)
         id: ver
         env:
@@ -28,7 +27,6 @@ jobs:
         run: |
           python - << 'PY'
           import os, re, json, urllib.request
-
           repo = os.environ["REPO"]
           token = os.environ["GH_TOKEN"]
 
@@ -44,8 +42,7 @@ jobs:
 
           pat = re.compile(r"^v(\d+)$")
           nums = []
-
-          for p in range(1, 6):  # до 500 тегов
+          for p in range(1, 6):
             data = fetch_tags(p)
             if not data:
               break
@@ -65,7 +62,6 @@ jobs:
           print("Next tag:", tag)
           PY
 
-      # Создаём git-тег refs/tags/vN на текущий коммит
       - name: Create git tag (vN) on this commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,7 +71,6 @@ jobs:
         run: |
           set -e
 
-          # Если тег уже существует — стоп (мы не двигаем теги)
           if curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/$REPO/git/ref/tags/$TAG" > /dev/null; then
@@ -83,7 +78,6 @@ jobs:
             exit 1
           fi
 
-          # Создаём ref тега на текущий коммит
           curl -fsS -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -101,13 +95,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Пушим ТОЛЬКО один тег — vN. Без latest и без sha.
-      - name: Build & Push (only vN)
+      - name: Build & Push (vN + latest)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/photo-backend:${{ steps.ver.outputs.tag }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/photo-backend:${{ steps.ver.outputs.tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/photo-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
